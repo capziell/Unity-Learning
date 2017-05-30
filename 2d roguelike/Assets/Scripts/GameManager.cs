@@ -1,19 +1,21 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Security.AccessControl;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 public class GameManager : MonoBehaviour
 {
     public float levelStartDelay = 2f;
-    public float turnDelay = 0.1f;
+    public float turnDelay = 0.03f;
     public int playerFoodPoints = 100;
     [HideInInspector] public bool playersTurn = true;
     public static GameManager instance = null;
     public BoardManager boardScript;
 
-    private int level = 1 ;
+    private int level = 1;
 
 
     private Text levelText;
@@ -31,6 +33,14 @@ public class GameManager : MonoBehaviour
 	    if (instance == null)
 	    {
 	        instance = this;
+	        SceneManager.sceneLoaded += delegate
+	        {
+	            if (doingSetup == false)
+	            {
+	                level++;
+	                InitGame();
+	            }
+            };
 	    }
         else if (instance != this)
 	    {
@@ -42,12 +52,6 @@ public class GameManager : MonoBehaviour
         boardScript = GetComponent<BoardManager>();
 	    InitGame();
 	}
-
-    private void OnLevelWasLoaded(int index)
-    {
-        level++;
-        InitGame();
-    }
 
     private void InitGame()
     {
