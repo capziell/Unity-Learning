@@ -89,7 +89,7 @@ public class Player : MonoBehaviour
             rb2d.MovePosition(new Vector2(0, 0));
             rb2d.velocity = Vector2.zero;
             rb2d.angularVelocity = 0;
-            gameManager.AddScore(-3);
+            gameManager.AddLife(-1);
             died = false;
         }
 

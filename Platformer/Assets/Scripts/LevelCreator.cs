@@ -9,6 +9,7 @@ public class LevelCreator : MonoBehaviour
 
     public GameObject platform;
     public GameObject collectable;
+    public GameObject life;
     public int numberOfPlatforms = 10;
     public float verticalMin = -4f;
     public float verticalMax = 2.5f;
@@ -31,6 +32,13 @@ public class LevelCreator : MonoBehaviour
 	        {
 	            Instantiate(collectable, nextPosition + new Vector2(-1.5f + 1.5f * j, 1f), Quaternion.identity);
 	        }
+
+            int a = Random.Range(1, 101);
+            if(a >= 95)
+            {
+                Instantiate(life, nextPosition + new Vector2(0, 3f), Quaternion.identity);
+            }
+
 	        originPosition = nextPosition;
 	    }
 	    Instantiate(goal, originPosition + new Vector2(1.8f, 1f), Quaternion.identity);
