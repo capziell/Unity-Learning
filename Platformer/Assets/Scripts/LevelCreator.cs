@@ -10,6 +10,8 @@ public class LevelCreator : MonoBehaviour
     public GameObject platform;
     public GameObject collectable;
     public GameObject life;
+    public GameObject enemy;
+   
     public int numberOfPlatforms = 10;
     public float verticalMin = -4f;
     public float verticalMax = 2.5f;
@@ -37,6 +39,12 @@ public class LevelCreator : MonoBehaviour
             if(a >= 95)
             {
                 Instantiate(life, nextPosition + new Vector2(0, 3f), Quaternion.identity);
+            }
+
+            a = Random.Range(1, 101);
+            if(a >= 92)
+            {
+                Instantiate(enemy, nextPosition + new Vector2(0, 1f), Quaternion.identity);
             }
 
 	        originPosition = nextPosition;
