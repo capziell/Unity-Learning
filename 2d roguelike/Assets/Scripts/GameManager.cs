@@ -9,14 +9,14 @@ using UnityEngine.UI;
 public class GameManager : MonoBehaviour
 {
     public float levelStartDelay = 2f;
-    public float turnDelay = 0.03f;
+    public float turnDelay = 0.5f;
     public int playerFoodPoints = 100;
     [HideInInspector] public bool playersTurn = true;
     public static GameManager instance = null;
     public BoardManager boardScript;
 
     private int level = 1;
-
+    private bool firstRun = true;
 
     private Text levelText;
     private GameObject levelImage;
@@ -26,32 +26,42 @@ public class GameManager : MonoBehaviour
     private bool doingSetup;
 
 
-	// Use this for initialization
-	void Awake ()
-	{
-        
-	    if (instance == null)
-	    {
-	        instance = this;
-	        SceneManager.sceneLoaded += delegate
-	        {
-	            if (doingSetup == false)
-	            {
-	                level++;
-	                InitGame();
-	            }
-            };
-	    }
+    // Use this for initialization
+    void Awake()
+    {
+
+        if (instance == null)
+        {
+            instance = this;
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
         else if (instance != this)
-	    {
-	        Destroy(gameObject);
-	    }
+        {
+            Destroy(gameObject);
+        }
 
         DontDestroyOnLoad(gameObject);
-	    enemies = new List<Enemy>();
+        enemies = new List<Enemy>();
         boardScript = GetComponent<BoardManager>();
-	    InitGame();
-	}
+        InitGame();
+    }
+
+    private void OnSceneLoaded(Scene s, LoadSceneMode l)
+    {
+        if(firstRun)
+        {
+            firstRun = false;
+            return;
+        }
+        instance.level++;
+        instance.InitGame();
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
 
     private void InitGame()
     {
@@ -86,13 +96,14 @@ public class GameManager : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update () {
-	    if (playersTurn || enemiesMoving)
-	    {
-	        return;
-	    }
-	    StartCoroutine(MoveEnemies());
-	}
+    void Update()
+    {
+        if (playersTurn || enemiesMoving)
+        {
+            return;
+        }
+        StartCoroutine(MoveEnemies());
+    }
 
     IEnumerator MoveEnemies()
     {
