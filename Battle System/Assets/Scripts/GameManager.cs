@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -11,7 +12,9 @@ public class GameManager : MonoBehaviour
 
     public Text HealthText;
     public Text AttackText;
-    
+
+    private List<PC> attackOrder = new List<PC>();
+
     private float attackDelay = 0.3f;
 
     private bool playerOneAttacking;
@@ -38,11 +41,22 @@ public class GameManager : MonoBehaviour
                           " 2: " +
                           playerTwoInstance.HealthState();
         AttackText.text = "1:";
-        if (playerOneAttacking) AttackText.text += " Attack ";
+        if (playerOneAttacking)
+        {
+            AttackText.text = (attackOrder.FindIndex(c => c == playerOneInstance) + 1).ToString() + ":";
+            AttackText.text += playerOneInstance.GetAttackName(attackOrder.FindIndex(c => c == playerOneInstance));
+        }
         else if (playerOneInstance.health > 0) AttackText.text += " Defend ";
         else AttackText.text += " Dead ";
-        AttackText.text += "2:";
-        if (playerTwoAttacking) AttackText.text += " Attack ";
+        if (!playerTwoAttacking)
+        {
+            AttackText.text += "2:";
+        }
+        if (playerTwoAttacking)
+        {
+            AttackText.text += (attackOrder.FindIndex(c => c == playerTwoInstance) + 1).ToString() + ":";
+            AttackText.text += playerTwoInstance.GetAttackName(attackOrder.FindIndex(c => c == playerTwoInstance));
+        }
         else if (playerTwoInstance.health > 0) AttackText.text += " Defend ";
         else AttackText.text += " Dead ";
 
@@ -74,12 +88,28 @@ public class GameManager : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.LeftArrow))
             {
                 playerOneAttacking = !playerOneAttacking;
+                if (playerOneAttacking)
+                {
+                    attackOrder.Add(playerOneInstance);
+                }
+                else
+                {
+                    attackOrder.Remove(playerOneInstance);
+                }
                 UpdateText();
             }
 
             if (Input.GetKeyDown(KeyCode.RightArrow))
             {
                 playerTwoAttacking = !playerTwoAttacking;
+                if (playerTwoAttacking)
+                {
+                    attackOrder.Add(playerTwoInstance);
+                }
+                else
+                {
+                    attackOrder.Remove(playerTwoInstance);
+                }
                 UpdateText();
             }
 
