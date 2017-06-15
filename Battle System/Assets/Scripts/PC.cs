@@ -27,7 +27,7 @@ public class PC : MonoBehaviour
 
     private void PopulateAttackSets()
     {
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 4; i++)
         {
             int n = Random.Range(1, 5);
             switch (n)

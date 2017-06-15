@@ -6,8 +6,7 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
-    public PC playerOne;
-    public PC playerTwo;
+    public PC player;
     public Enemy enemy;
 
     public Text HealthText;
@@ -19,19 +18,27 @@ public class GameManager : MonoBehaviour
 
     private bool enemyAttacking;
 
-    private PC playerOneInstance;
-    private PC playerTwoInstance;
+    private List<PC> playerCharacters = new List<PC>();
+
     private Enemy enemyInstance;
+
+    private int playersAlive;
 
     // Use this for initialization
     void Start()
     {
-        playerOneInstance = Instantiate(playerOne, new Vector3(1f, 0f), Quaternion.identity);
-        playerOneInstance.keyCode = KeyCode.LeftArrow;
-        playerOneInstance.gameManager = this;
-        playerTwoInstance = Instantiate(playerTwo, new Vector3(2f, 0f), Quaternion.identity);
-        playerTwoInstance.keyCode = KeyCode.RightArrow;
-        playerTwoInstance.gameManager = this;
+        playerCharacters.Add(Instantiate(player, new Vector3(1f, 0f), Quaternion.identity));
+        playerCharacters[0].keyCode = KeyCode.LeftArrow;
+        playerCharacters[0].gameManager = this;
+        playerCharacters.Add(Instantiate(player, new Vector3(3f, 0f), Quaternion.identity));
+        playerCharacters[1].keyCode = KeyCode.RightArrow;
+        playerCharacters[1].gameManager = this;
+        playerCharacters.Add(Instantiate(player, new Vector3(2f, 1f), Quaternion.identity));
+        playerCharacters[2].keyCode = KeyCode.UpArrow;
+        playerCharacters[2].gameManager = this;
+        playerCharacters.Add(Instantiate(player, new Vector3(2f, -1f), Quaternion.identity));
+        playerCharacters[3].keyCode = KeyCode.DownArrow;
+        playerCharacters[3].gameManager = this;
         enemyInstance = Instantiate(enemy, new Vector3(-1f, 0f), Quaternion.identity);
 
         UpdateText();
@@ -39,28 +46,24 @@ public class GameManager : MonoBehaviour
 
     private void UpdateText()
     {
-        HealthText.text = "Enemy: " + enemyInstance.HealthState() + " 1: " + playerOneInstance.HealthState() +
-                          " 2: " +
-                          playerTwoInstance.HealthState();
-        AttackText.text = "1:";
-        if (attackOrder.Contains(playerOneInstance))
+        HealthText.text = "Enemy: " + enemyInstance.HealthState();
+        AttackText.text = "";
+        foreach (PC c in playerCharacters)
         {
-            AttackText.text = (attackOrder.FindIndex(c => c == playerOneInstance) + 1).ToString() + ":";
-            AttackText.text += playerOneInstance.GetAttackName(attackOrder.FindIndex(c => c == playerOneInstance));
+            HealthText.text += " " + (playerCharacters.IndexOf(c) + 1) + ": " + c.HealthState();
         }
-        else if (playerOneInstance.health > 0) AttackText.text += " Defend ";
-        else AttackText.text += " Dead ";
-        if (!attackOrder.Contains(playerTwoInstance))
+
+        foreach (PC c in playerCharacters)
         {
-            AttackText.text += "2:";
+            if (attackOrder.Contains(c))
+            {
+                AttackText.text += " " + (attackOrder.IndexOf(c) + 1) + ": " + c.SelectedAttack().Name;
+            }
+            else if (c.health > 0)
+            {
+                AttackText.text += " " + (playerCharacters.IndexOf(c) + 1) + ": Defending";
+            }
         }
-        if (attackOrder.Contains(playerTwoInstance))
-        {
-            AttackText.text += (attackOrder.FindIndex(c => c == playerTwoInstance) + 1).ToString() + ":";
-            AttackText.text += playerTwoInstance.GetAttackName(attackOrder.FindIndex(c => c == playerTwoInstance));
-        }
-        else if (playerTwoInstance.health > 0) AttackText.text += " Defend ";
-        else AttackText.text += " Dead ";
 
         if (enemyInstance.health <= 0)
         {
@@ -68,7 +71,15 @@ public class GameManager : MonoBehaviour
             HealthText.text = "Battle Won";
             StartCoroutine(StartNewBattleDelayed(2f));
         }
-        if (playerOneInstance.health <= 0 && playerTwoInstance.health <= 0)
+
+        playersAlive = 0;
+
+        foreach (PC c in playerCharacters)
+        {
+            if (c.health > 0) playersAlive++;
+        }
+
+        if (playersAlive == 0)
         {
             AttackText.text = "";
             HealthText.text = "Game Over";
@@ -86,7 +97,7 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         UpdateText();
-        if (enemyInstance.health > 0 && (playerOneInstance.health > 0 || playerTwoInstance.health > 0))
+        if (enemyInstance.health > 0 && playersAlive > 0)
         {
             if (Input.GetKeyDown(KeyCode.Return))
             {
@@ -100,48 +111,38 @@ public class GameManager : MonoBehaviour
     {
         foreach (PC c in attackOrder)
         {
+            c.transform.Translate(Vector3.left);
             if (enemyAttacking)
             {
                 enemyInstance.AddHealth(-c.SelectedAttack().Damage);
             }
             else enemyInstance.AddHealth(-c.SelectedAttack().Damage / 2);
-            c.transform.Translate(Vector3.left);
+            if (enemyInstance.health <= 0)
+            {
+                c.transform.Translate(Vector3.right);
+                yield break;
+            }
             yield return new WaitForSeconds(attackDelay);
             c.transform.Translate(Vector3.right);
         }
         if (enemyAttacking)
         {
             enemyInstance.transform.Translate(Vector3.right);
-            if (playerOneInstance.health <= 0)
+            int playerHealth = -1;
+            PC attackTarget = null;
+            while (playerHealth <= 0)
             {
-                if (attackOrder.Contains(playerTwoInstance)) playerTwoInstance.AddHealth(-enemyInstance.attack);
-                else playerTwoInstance.AddHealth(-enemyInstance.attack / 2);
-                UpdateText();
-                yield return new WaitForSeconds(attackDelay);
-                enemyInstance.transform.Translate(Vector3.left);
+                attackTarget = playerCharacters[Random.Range(0, 4)];
+                playerHealth = attackTarget.health;
             }
-            if (playerTwoInstance.health <= 0)
-            {
-                if (attackOrder.Contains(playerOneInstance)) playerOneInstance.AddHealth(-enemyInstance.attack);
-                else playerOneInstance.AddHealth(-enemyInstance.attack / 2);
-                UpdateText();
-                yield return new WaitForSeconds(attackDelay);
-                enemyInstance.transform.Translate(Vector3.left);
-            }
-            if (Random.Range(1, 3) == 1)
-            {
-                if (attackOrder.Contains(playerOneInstance)) playerOneInstance.AddHealth(-enemyInstance.attack);
-                else playerOneInstance.AddHealth(-enemyInstance.attack / 2);
-            }
-            else if (attackOrder.Contains(playerTwoInstance)) playerTwoInstance.AddHealth(-enemyInstance.attack);
-            else playerTwoInstance.AddHealth(-enemyInstance.attack / 2);
-            UpdateText();
+            if (attackTarget == null) yield break;
+            if (attackOrder.Contains(attackTarget)) attackTarget.AddHealth(-enemyInstance.attack);
+            else attackTarget.AddHealth(-enemyInstance.attack / 2);
             yield return new WaitForSeconds(attackDelay);
             enemyInstance.transform.Translate(Vector3.left);
         }
         enemyAttacking = false;
         attackOrder.Clear();
-        UpdateText();
 
     }
 }
