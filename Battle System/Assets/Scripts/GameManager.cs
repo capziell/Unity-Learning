@@ -10,7 +10,13 @@ public class GameManager : MonoBehaviour
     public Enemy enemy;
 
     public Text HealthText;
-    public Text AttackText;
+
+    public Text Attack1Text;
+    public Text Attack2Text;
+    public Text Attack3Text;
+    public Text Attack4Text;
+
+    private List<Text> attackTexts = new List<Text>();
 
     public List<PC> attackOrder = new List<PC>();
 
@@ -27,18 +33,27 @@ public class GameManager : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+        attackTexts.Add(Attack1Text);
+        attackTexts.Add(Attack2Text);
+        attackTexts.Add(Attack3Text);
+        attackTexts.Add(Attack4Text);
+
         playerCharacters.Add(Instantiate(player, new Vector3(1f, 0f), Quaternion.identity));
         playerCharacters[0].keyCode = KeyCode.LeftArrow;
         playerCharacters[0].gameManager = this;
+        playerCharacters[0].GetComponent<SpriteRenderer>().color = Color.blue;
         playerCharacters.Add(Instantiate(player, new Vector3(3f, 0f), Quaternion.identity));
         playerCharacters[1].keyCode = KeyCode.RightArrow;
         playerCharacters[1].gameManager = this;
+        playerCharacters[1].GetComponent<SpriteRenderer>().color = Color.red;
         playerCharacters.Add(Instantiate(player, new Vector3(2f, 1f), Quaternion.identity));
         playerCharacters[2].keyCode = KeyCode.UpArrow;
         playerCharacters[2].gameManager = this;
+        playerCharacters[2].GetComponent<SpriteRenderer>().color = Color.yellow;
         playerCharacters.Add(Instantiate(player, new Vector3(2f, -1f), Quaternion.identity));
         playerCharacters[3].keyCode = KeyCode.DownArrow;
         playerCharacters[3].gameManager = this;
+        playerCharacters[3].GetComponent<SpriteRenderer>().color = Color.green;
         enemyInstance = Instantiate(enemy, new Vector3(-1f, 0f), Quaternion.identity);
 
         UpdateText();
@@ -47,27 +62,36 @@ public class GameManager : MonoBehaviour
     private void UpdateText()
     {
         HealthText.text = "Enemy: " + enemyInstance.HealthState();
-        AttackText.text = "";
         foreach (PC c in playerCharacters)
         {
             HealthText.text += " " + (playerCharacters.IndexOf(c) + 1) + ": " + c.HealthState();
         }
 
+        int currentIndex = 0;
+
         foreach (PC c in playerCharacters)
         {
             if (attackOrder.Contains(c))
             {
-                AttackText.text += " " + (attackOrder.IndexOf(c) + 1) + ": " + c.SelectedAttack().Name;
+                int index = attackOrder.IndexOf(c);
+                attackTexts[index].color = c.GetComponent<SpriteRenderer>().color;
+                attackTexts[index].text = c.SelectedAttack().Name;
+                currentIndex++;
             }
-            else if (c.health > 0)
+        }
+
+        foreach (PC c in playerCharacters)
+        {
+            if (!attackOrder.Contains(c))
             {
-                AttackText.text += " " + (playerCharacters.IndexOf(c) + 1) + ": Defending";
+                attackTexts[currentIndex].color = c.GetComponent<SpriteRenderer>().color;
+                attackTexts[currentIndex].text = c.health > 0 ? "Defending" : "Dead";
+                currentIndex++;
             }
         }
 
         if (enemyInstance.health <= 0)
         {
-            AttackText.text = "";
             HealthText.text = "Battle Won";
             StartCoroutine(StartNewBattleDelayed(2f));
         }
@@ -81,7 +105,6 @@ public class GameManager : MonoBehaviour
 
         if (playersAlive == 0)
         {
-            AttackText.text = "";
             HealthText.text = "Game Over";
             StartCoroutine(StartNewBattleDelayed(2f));
         }
