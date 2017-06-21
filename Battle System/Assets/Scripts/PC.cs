@@ -14,13 +14,16 @@ public class PC : MonoBehaviour
     public KeyCode keyCode;
 
     private Text damageText;
+    private Text defendText;
 
     public GameManager gameManager;
 
     // Use this for initialization
     void Start()
     {
-        damageText = GetComponentInChildren<Text>();
+        var texts = GetComponentsInChildren<Text>();
+        damageText = texts[0];
+        defendText = texts[1];
         ClearText();
         PopulateAttackSets();
     }
@@ -91,6 +94,12 @@ public class PC : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (gameManager.attackOrder.Contains(this))
+        {
+            defendText.text = "";
+        }
+        else defendText.text = "D";
+
         if (Input.GetKeyDown(keyCode))
         {
             if (gameManager.attackOrder.Contains(this))

@@ -11,18 +11,26 @@ public class GameManager : MonoBehaviour
 
     public Text HealthText;
 
+    public Image Attack1Panel;
+    public Image Attack2Panel;
+    public Image Attack3Panel;
+    public Image Attack4Panel;
+
     public Text Attack1Text;
     public Text Attack2Text;
     public Text Attack3Text;
     public Text Attack4Text;
 
+    private List<Image> attackPanels = new List<Image>();
     private List<Text> attackTexts = new List<Text>();
 
     public List<PC> attackOrder = new List<PC>();
+    private List<PC> lastAttackOrder;
 
     private float attackDelay = 0.3f;
 
     private bool enemyAttacking;
+    private bool enemyAttackedLastRound = true;
 
     private List<PC> playerCharacters = new List<PC>();
 
@@ -33,6 +41,11 @@ public class GameManager : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+        attackPanels.Add(Attack1Panel);
+        attackPanels.Add(Attack2Panel);
+        attackPanels.Add(Attack3Panel);
+        attackPanels.Add(Attack4Panel);
+
         attackTexts.Add(Attack1Text);
         attackTexts.Add(Attack2Text);
         attackTexts.Add(Attack3Text);
@@ -64,7 +77,17 @@ public class GameManager : MonoBehaviour
         HealthText.text = "Enemy: " + enemyInstance.HealthState();
         foreach (PC c in playerCharacters)
         {
-            HealthText.text += " " + (playerCharacters.IndexOf(c) + 1) + ": " + c.HealthState();
+            HealthText.text += " | " + (playerCharacters.IndexOf(c) + 1) + ": " + c.HealthState();
+        }
+
+        foreach (Image panel in attackPanels)
+        {
+            panel.enabled = false;
+        }
+
+        foreach (Text t in attackTexts)
+        {
+            t.text = "";
         }
 
         int currentIndex = 0;
@@ -74,18 +97,9 @@ public class GameManager : MonoBehaviour
             if (attackOrder.Contains(c))
             {
                 int index = attackOrder.IndexOf(c);
+                attackPanels[index].enabled = true;
                 attackTexts[index].color = c.GetComponent<SpriteRenderer>().color;
                 attackTexts[index].text = c.SelectedAttack().Name;
-                currentIndex++;
-            }
-        }
-
-        foreach (PC c in playerCharacters)
-        {
-            if (!attackOrder.Contains(c))
-            {
-                attackTexts[currentIndex].color = c.GetComponent<SpriteRenderer>().color;
-                attackTexts[currentIndex].text = c.health > 0 ? "Defending" : "Dead";
                 currentIndex++;
             }
         }
@@ -127,11 +141,32 @@ public class GameManager : MonoBehaviour
                 enemyAttacking = Random.Range(1, 101) > 25;
                 StartCoroutine(InitiateAttack());
             }
+            else if (Input.GetKeyDown(KeyCode.Space))
+            {
+                attackOrder = lastAttackOrder;
+            }
         }
     }
 
     IEnumerator InitiateAttack()
     {
+        if (attackOrder.Count > 0)
+            lastAttackOrder = new List<PC>();
+        foreach (PC c in attackOrder)
+        {
+            if (c.health > 0)
+                lastAttackOrder.Add(c);
+        }
+
+        if (!enemyAttacking)
+        {
+            enemyInstance.Defend();
+            if (attackOrder.Count == 0)
+            {
+                yield return new WaitForSeconds(0.5f);
+            }
+        }
+
         foreach (PC c in attackOrder)
         {
             c.transform.Translate(Vector3.left);
@@ -151,6 +186,11 @@ public class GameManager : MonoBehaviour
         if (enemyAttacking)
         {
             enemyInstance.transform.Translate(Vector3.right);
+            int originalAttack = enemyInstance.attack;
+            if (!enemyAttackedLastRound)
+            {
+                enemyInstance.attack = enemyInstance.attack * 2;
+            }
             int playerHealth = -1;
             PC attackTarget = null;
             while (playerHealth <= 0)
@@ -159,12 +199,22 @@ public class GameManager : MonoBehaviour
                 playerHealth = attackTarget.health;
             }
             if (attackTarget == null) yield break;
-            if (attackOrder.Contains(attackTarget)) attackTarget.AddHealth(-enemyInstance.attack);
+            if (attackOrder.Contains(attackTarget))
+            {
+                attackTarget.AddHealth(-enemyInstance.attack);
+            }
             else attackTarget.AddHealth(-enemyInstance.attack / 2);
             yield return new WaitForSeconds(attackDelay);
             enemyInstance.transform.Translate(Vector3.left);
+            enemyInstance.attack = originalAttack;
+            enemyAttackedLastRound = true;
         }
+        else enemyAttackedLastRound = false;
+
         enemyAttacking = false;
+
+        enemyInstance.StopDefending();
+
         attackOrder.Clear();
 
     }
