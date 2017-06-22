@@ -1,8 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
@@ -34,9 +36,9 @@ public class GameManager : MonoBehaviour
 
     private List<PC> playerCharacters = new List<PC>();
 
-    private Enemy enemyInstance;
+    public bool turnInProgress;
 
-    private int playersAlive;
+    private Enemy enemyInstance;
 
     // Use this for initialization
     void Start()
@@ -68,6 +70,7 @@ public class GameManager : MonoBehaviour
         playerCharacters[3].gameManager = this;
         playerCharacters[3].GetComponent<SpriteRenderer>().color = Color.green;
         enemyInstance = Instantiate(enemy, new Vector3(-1f, 0f), Quaternion.identity);
+        enemyInstance.GameManager = this;
 
         UpdateText();
     }
@@ -110,18 +113,14 @@ public class GameManager : MonoBehaviour
             StartCoroutine(StartNewBattleDelayed(2f));
         }
 
-        playersAlive = 0;
 
         foreach (PC c in playerCharacters)
         {
-            if (c.health > 0) playersAlive++;
+            if (c.health > 0) return;
         }
 
-        if (playersAlive == 0)
-        {
-            HealthText.text = "Game Over";
-            StartCoroutine(StartNewBattleDelayed(2f));
-        }
+        HealthText.text = "Game Over";
+        StartCoroutine(StartNewBattleDelayed(2f));
     }
 
     IEnumerator StartNewBattleDelayed(float s)
@@ -134,15 +133,23 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         UpdateText();
-        if (enemyInstance.health > 0 && playersAlive > 0)
+        if (enemyInstance.health > 0 && !HealthText.text.Equals("Game Over"))
         {
             if (Input.GetKeyDown(KeyCode.Return))
             {
-                enemyAttacking = Random.Range(1, 101) > 25;
-                StartCoroutine(InitiateAttack());
+                if (!turnInProgress)
+                {
+                    enemyAttacking = Random.Range(1, 101) > 25;
+                    StartCoroutine(InitiateAttack());
+                    turnInProgress = true;
+                }
             }
             else if (Input.GetKeyDown(KeyCode.Space))
             {
+                foreach (PC c in lastAttackOrder)
+                {
+                    if (c.health <= 0) return;
+                }
                 attackOrder = lastAttackOrder;
             }
         }
@@ -154,8 +161,7 @@ public class GameManager : MonoBehaviour
             lastAttackOrder = new List<PC>();
         foreach (PC c in attackOrder)
         {
-            if (c.health > 0)
-                lastAttackOrder.Add(c);
+            lastAttackOrder.Add(c);
         }
 
         if (!enemyAttacking)
@@ -163,59 +169,75 @@ public class GameManager : MonoBehaviour
             enemyInstance.Defend();
             if (attackOrder.Count == 0)
             {
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(0.6f);
             }
         }
 
         foreach (PC c in attackOrder)
         {
-            c.transform.Translate(Vector3.left);
-            if (enemyAttacking)
-            {
-                enemyInstance.AddHealth(-c.SelectedAttack().Damage);
-            }
-            else enemyInstance.AddHealth(-c.SelectedAttack().Damage / 2);
+            Vector3 currentPosition = c.transform.position;
+            StartCoroutine(Move(c.gameObject, enemyInstance.transform.position + new Vector3(0.8f, 0)));
+            c.AttackTarget(enemyInstance);
             if (enemyInstance.health <= 0)
             {
-                c.transform.Translate(Vector3.right);
+                yield return new WaitForSeconds(attackDelay);
+                StartCoroutine(Move(c.gameObject, currentPosition));
                 yield break;
             }
             yield return new WaitForSeconds(attackDelay);
-            c.transform.Translate(Vector3.right);
+            StartCoroutine(Move(c.gameObject, currentPosition));
         }
+
+        yield return new WaitForSeconds(0.3f);
+
+
         if (enemyAttacking)
         {
-            enemyInstance.transform.Translate(Vector3.right);
-            int originalAttack = enemyInstance.attack;
-            if (!enemyAttackedLastRound)
-            {
-                enemyInstance.attack = enemyInstance.attack * 2;
-            }
             int playerHealth = -1;
             PC attackTarget = null;
             while (playerHealth <= 0)
             {
-                attackTarget = playerCharacters[Random.Range(0, 4)];
+                attackTarget = playerCharacters[Random.Range(0, playerCharacters.Count)];
                 playerHealth = attackTarget.health;
             }
             if (attackTarget == null) yield break;
-            if (attackOrder.Contains(attackTarget))
-            {
-                attackTarget.AddHealth(-enemyInstance.attack);
-            }
-            else attackTarget.AddHealth(-enemyInstance.attack / 2);
+            Vector3 currentPosition = enemyInstance.transform.position;
+            StartCoroutine(Move(enemyInstance.gameObject,
+                attackTarget.transform.position + new Vector3(-0.8f, 0)));
+            enemyInstance.AttackTarget(attackTarget);
             yield return new WaitForSeconds(attackDelay);
-            enemyInstance.transform.Translate(Vector3.left);
-            enemyInstance.attack = originalAttack;
-            enemyAttackedLastRound = true;
+            StartCoroutine(Move(enemyInstance.gameObject, currentPosition));
+            yield return new WaitForSeconds(0.3f);
         }
-        else enemyAttackedLastRound = false;
+
+        if (!enemyAttacking) enemyInstance.StopDefending();
 
         enemyAttacking = false;
 
-        enemyInstance.StopDefending();
-
         attackOrder.Clear();
 
+        turnInProgress = false;
+
     }
+
+    private IEnumerator Move(GameObject objectToMove, Vector3 destination)
+    {
+        float remainingDistance = (objectToMove.transform.position - destination).sqrMagnitude;
+
+        while (remainingDistance > Single.Epsilon)
+        {
+            Vector3 newPosition = Vector3.MoveTowards(objectToMove.transform.position, destination,
+                15 * Time.deltaTime);
+            objectToMove.transform.position = newPosition;
+            remainingDistance = (objectToMove.transform.position - destination).sqrMagnitude;
+            yield return null;
+        }
+
+    }
+
+    public bool EnemyAttacking()
+    {
+        return enemyAttacking;
+    }
+
 }

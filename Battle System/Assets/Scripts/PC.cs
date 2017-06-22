@@ -7,7 +7,6 @@ using UnityEngine.UI;
 public class PC : MonoBehaviour
 {
     public int health = 5;
-    public int attack = 2;
 
     private List<Attack> attackSet = new List<Attack>();
 
@@ -61,9 +60,26 @@ public class PC : MonoBehaviour
 
     public void AddHealth(int i)
     {
-        health += i;
-        damageText.text = Mathf.Abs(i).ToString();
+        if (Defending())
+        {
+            health += i / 2;
+            damageText.text = Mathf.Abs(i / 2).ToString();
+        }
+        else
+        {
+            health += i;
+            damageText.text = Mathf.Abs(i).ToString();
+        }
         StartCoroutine(ClearTextAfterDelay());
+    }
+
+    private bool Defending()
+    {
+        if (gameManager.attackOrder.Contains(this))
+        {
+            return false;
+        }
+        return true;
     }
 
     public Attack SelectedAttack()
@@ -91,6 +107,11 @@ public class PC : MonoBehaviour
         return "Dead";
     }
 
+    public void AttackTarget(Enemy enemy)
+    {
+        enemy.AddHealth(-SelectedAttack().Damage);
+    }
+
     // Update is called once per frame
     void Update()
     {
@@ -102,19 +123,31 @@ public class PC : MonoBehaviour
 
         if (Input.GetKeyDown(keyCode))
         {
-            if (gameManager.attackOrder.Contains(this))
+            if (!gameManager.turnInProgress)
             {
-                gameManager.attackOrder.Remove(this);
-            }
-            else
-            {
-                gameManager.attackOrder.Add(this);
+                if (gameManager.attackOrder.Contains(this))
+                {
+                    gameManager.attackOrder.Remove(this);
+                }
+                else
+                {
+                    gameManager.attackOrder.Add(this);
+                }
             }
         }
 
         if (health <= 0)
         {
-            gameObject.SetActive(false);
+            StartCoroutine(Die());
         }
     }
+
+    private IEnumerator Die()
+    {
+        defendText.text = "Dead";
+        yield return new WaitForSeconds(1f);
+        gameObject.SetActive(false);
+    }
 }
+
+

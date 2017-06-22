@@ -5,12 +5,15 @@ using UnityEngine.UI;
 
 public class Enemy : MonoBehaviour
 {
+    public GameManager GameManager;
 
     public int health = 8;
     public int attack = 3;
 
     private Text damageText;
     private Text defendText;
+    
+    private bool defendedLastTurn;
 
     // Use this for initialization
     void Start()
@@ -45,15 +48,35 @@ public class Enemy : MonoBehaviour
         defendText.text = "D";
     }
 
+    public void AttackTarget(PC character)
+    {
+        if (defendedLastTurn)
+        {
+            character.AddHealth(-attack * 2);
+        }
+        else character.AddHealth(-attack);
+
+        defendedLastTurn = false;
+    }
+
     public void StopDefending()
     {
         defendText.text = "";
+        defendedLastTurn = true;
     }
 
     public void AddHealth(int i)
     {
-        health += i;
-        damageText.text = Mathf.Abs(i).ToString();
+        if (!GameManager.EnemyAttacking())
+        {
+            damageText.text = Mathf.Abs(i / 2).ToString();
+            health += i / 2;
+        }
+        else
+        {
+            health += i;
+            damageText.text = Mathf.Abs(i).ToString();
+        }
         StartCoroutine(ClearTextAfterDelay());
     }
     // Update is called once per frame
@@ -61,7 +84,14 @@ public class Enemy : MonoBehaviour
     {
         if (health <= 0)
         {
-            Destroy(gameObject);
+            StartCoroutine(Die());
         }
+    }
+
+    private IEnumerator Die()
+    {
+        defendText.text = "Dead";
+        yield return new WaitForSeconds(1f);
+        gameObject.SetActive(false);
     }
 }
