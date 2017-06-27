@@ -23,6 +23,12 @@ public class GameManager : MonoBehaviour
     public Text Attack3Text;
     public Text Attack4Text;
 
+    public Sprite redpanel;
+    public Sprite bluepanel;
+    public Sprite greenpanel;
+    public Sprite yellowpanel;
+
+
     private List<Image> attackPanels = new List<Image>();
     private List<Text> attackTexts = new List<Text>();
 
@@ -57,18 +63,23 @@ public class GameManager : MonoBehaviour
         playerCharacters[0].keyCode = KeyCode.LeftArrow;
         playerCharacters[0].gameManager = this;
         playerCharacters[0].GetComponent<SpriteRenderer>().color = Color.blue;
-        playerCharacters.Add(Instantiate(player, new Vector3(3f, 0f), Quaternion.identity));
+        playerCharacters[0].GetComponentInChildren<Image>().sprite = bluepanel;
+        playerCharacters.Add(Instantiate(player, new Vector3(4f, 0f), Quaternion.identity));
         playerCharacters[1].keyCode = KeyCode.RightArrow;
         playerCharacters[1].gameManager = this;
         playerCharacters[1].GetComponent<SpriteRenderer>().color = Color.red;
-        playerCharacters.Add(Instantiate(player, new Vector3(2f, 1f), Quaternion.identity));
+        playerCharacters[1].GetComponentInChildren<Image>().sprite = redpanel;
+        playerCharacters.Add(Instantiate(player, new Vector3(2.5f, 2f), Quaternion.identity));
         playerCharacters[2].keyCode = KeyCode.UpArrow;
         playerCharacters[2].gameManager = this;
         playerCharacters[2].GetComponent<SpriteRenderer>().color = Color.yellow;
-        playerCharacters.Add(Instantiate(player, new Vector3(2f, -1f), Quaternion.identity));
+        playerCharacters[2].GetComponentInChildren<Image>().sprite = yellowpanel;
+        playerCharacters.Add(Instantiate(player, new Vector3(2.5f, -2f), Quaternion.identity));
         playerCharacters[3].keyCode = KeyCode.DownArrow;
         playerCharacters[3].gameManager = this;
         playerCharacters[3].GetComponent<SpriteRenderer>().color = Color.green;
+        playerCharacters[3].GetComponentInChildren<Image>().sprite = greenpanel;
+
         enemyInstance = Instantiate(enemy, new Vector3(-1f, 0f), Quaternion.identity);
         enemyInstance.GameManager = this;
 
