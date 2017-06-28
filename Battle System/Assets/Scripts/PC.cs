@@ -120,6 +120,21 @@ public class PC : MonoBehaviour
         enemy.AddHealth(-SelectedAttack().Damage);
     }
 
+    void OnMouseDown()
+    {
+        if (!gameManager.turnInProgress)
+        {
+            if (gameManager.attackOrder.Contains(this))
+            {
+                gameManager.attackOrder.Remove(this);
+            }
+            else
+            {
+                gameManager.attackOrder.Add(this);
+            }
+        }
+    }
+
     // Update is called once per frame
     void Update()
     {

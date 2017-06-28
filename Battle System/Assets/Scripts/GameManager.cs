@@ -28,6 +28,8 @@ public class GameManager : MonoBehaviour
     public Sprite greenpanel;
     public Sprite yellowpanel;
 
+    public Button RepeatButton;
+    public Button AttackButton;
 
     private List<Image> attackPanels = new List<Image>();
     private List<Text> attackTexts = new List<Text>();
@@ -38,7 +40,6 @@ public class GameManager : MonoBehaviour
     private float attackDelay = 0.3f;
 
     private bool enemyAttacking;
-    private bool enemyAttackedLastRound = true;
 
     private List<PC> playerCharacters = new List<PC>();
 
@@ -144,6 +145,17 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         UpdateText();
+
+
+        foreach (PC c in lastAttackOrder)
+        {
+            if (c.health <= 0)
+            {
+                RepeatButton.color
+            }
+        }
+
+
         if (enemyInstance.health > 0 && !HealthText.text.Equals("Game Over"))
         {
             if (Input.GetKeyDown(KeyCode.Return))
