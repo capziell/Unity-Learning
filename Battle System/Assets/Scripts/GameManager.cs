@@ -29,13 +29,16 @@ public class GameManager : MonoBehaviour
     public Sprite yellowpanel;
 
     public Button RepeatButton;
-    public Button AttackButton;
+    public Button ConfirmButton;
+
+    private bool repeatPressed;
+    private bool confirmPressed;
 
     private List<Image> attackPanels = new List<Image>();
     private List<Text> attackTexts = new List<Text>();
 
     public List<PC> attackOrder = new List<PC>();
-    private List<PC> lastAttackOrder;
+    private List<PC> lastAttackOrder = new List<PC>();
 
     private float attackDelay = 0.3f;
 
@@ -84,7 +87,20 @@ public class GameManager : MonoBehaviour
         enemyInstance = Instantiate(enemy, new Vector3(-1f, 0f), Quaternion.identity);
         enemyInstance.GameManager = this;
 
+        RepeatButton.onClick.AddListener(RepeatClicked);
+        ConfirmButton.onClick.AddListener(ConfirmClicked);
+
         UpdateText();
+    }
+
+    private void RepeatClicked()
+    {
+        repeatPressed = true;
+    }
+
+    private void ConfirmClicked()
+    {
+        confirmPressed = true;
     }
 
     private void UpdateText()
@@ -146,19 +162,29 @@ public class GameManager : MonoBehaviour
     {
         UpdateText();
 
+        int charactersalive = 0;
+        foreach (PC c in playerCharacters)
+        {
+            if (c.health > 0) charactersalive++;
+        }
+
+        bool everyoneAlive = true;
 
         foreach (PC c in lastAttackOrder)
         {
             if (c.health <= 0)
             {
-                RepeatButton.color
+                everyoneAlive = false;
             }
         }
+
+        RepeatButton.interactable = everyoneAlive;
 
 
         if (enemyInstance.health > 0 && !HealthText.text.Equals("Game Over"))
         {
-            if (Input.GetKeyDown(KeyCode.Return))
+
+            if (Input.GetKeyDown(KeyCode.Return) || confirmPressed || attackOrder.Count == charactersalive)
             {
                 if (!turnInProgress)
                 {
@@ -167,7 +193,7 @@ public class GameManager : MonoBehaviour
                     turnInProgress = true;
                 }
             }
-            else if (Input.GetKeyDown(KeyCode.Space))
+            else if (Input.GetKeyDown(KeyCode.Space) || repeatPressed)
             {
                 foreach (PC c in lastAttackOrder)
                 {
@@ -176,6 +202,8 @@ public class GameManager : MonoBehaviour
                 attackOrder = lastAttackOrder;
             }
         }
+        confirmPressed = false;
+        repeatPressed = false;
     }
 
     IEnumerator InitiateAttack()
