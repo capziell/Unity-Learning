@@ -23,16 +23,26 @@ public class GameManager : MonoBehaviour
     public Text Attack3Text;
     public Text Attack4Text;
 
+    public Sprite redpanel;
+    public Sprite bluepanel;
+    public Sprite greenpanel;
+    public Sprite yellowpanel;
+
+    public Button RepeatButton;
+    public Button ConfirmButton;
+
+    private bool repeatPressed;
+    private bool confirmPressed;
+
     private List<Image> attackPanels = new List<Image>();
     private List<Text> attackTexts = new List<Text>();
 
     public List<PC> attackOrder = new List<PC>();
-    private List<PC> lastAttackOrder;
+    private List<PC> lastAttackOrder = new List<PC>();
 
     private float attackDelay = 0.3f;
 
     private bool enemyAttacking;
-    private bool enemyAttackedLastRound = true;
 
     private List<PC> playerCharacters = new List<PC>();
 
@@ -57,22 +67,40 @@ public class GameManager : MonoBehaviour
         playerCharacters[0].keyCode = KeyCode.LeftArrow;
         playerCharacters[0].gameManager = this;
         playerCharacters[0].GetComponent<SpriteRenderer>().color = Color.blue;
-        playerCharacters.Add(Instantiate(player, new Vector3(3f, 0f), Quaternion.identity));
+        playerCharacters[0].GetComponentInChildren<Image>().sprite = bluepanel;
+        playerCharacters.Add(Instantiate(player, new Vector3(4f, 0f), Quaternion.identity));
         playerCharacters[1].keyCode = KeyCode.RightArrow;
         playerCharacters[1].gameManager = this;
         playerCharacters[1].GetComponent<SpriteRenderer>().color = Color.red;
-        playerCharacters.Add(Instantiate(player, new Vector3(2f, 1f), Quaternion.identity));
+        playerCharacters[1].GetComponentInChildren<Image>().sprite = redpanel;
+        playerCharacters.Add(Instantiate(player, new Vector3(2.5f, 2f), Quaternion.identity));
         playerCharacters[2].keyCode = KeyCode.UpArrow;
         playerCharacters[2].gameManager = this;
         playerCharacters[2].GetComponent<SpriteRenderer>().color = Color.yellow;
-        playerCharacters.Add(Instantiate(player, new Vector3(2f, -1f), Quaternion.identity));
+        playerCharacters[2].GetComponentInChildren<Image>().sprite = yellowpanel;
+        playerCharacters.Add(Instantiate(player, new Vector3(2.5f, -2f), Quaternion.identity));
         playerCharacters[3].keyCode = KeyCode.DownArrow;
         playerCharacters[3].gameManager = this;
         playerCharacters[3].GetComponent<SpriteRenderer>().color = Color.green;
+        playerCharacters[3].GetComponentInChildren<Image>().sprite = greenpanel;
+
         enemyInstance = Instantiate(enemy, new Vector3(-1f, 0f), Quaternion.identity);
         enemyInstance.GameManager = this;
 
+        RepeatButton.onClick.AddListener(RepeatClicked);
+        ConfirmButton.onClick.AddListener(ConfirmClicked);
+
         UpdateText();
+    }
+
+    private void RepeatClicked()
+    {
+        repeatPressed = true;
+    }
+
+    private void ConfirmClicked()
+    {
+        confirmPressed = true;
     }
 
     private void UpdateText()
@@ -133,9 +161,30 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         UpdateText();
+
+        int charactersalive = 0;
+        foreach (PC c in playerCharacters)
+        {
+            if (c.health > 0) charactersalive++;
+        }
+
+        bool everyoneAlive = true;
+
+        foreach (PC c in lastAttackOrder)
+        {
+            if (c.health <= 0)
+            {
+                everyoneAlive = false;
+            }
+        }
+
+        RepeatButton.interactable = everyoneAlive;
+
+
         if (enemyInstance.health > 0 && !HealthText.text.Equals("Game Over"))
         {
-            if (Input.GetKeyDown(KeyCode.Return))
+
+            if (Input.GetKeyDown(KeyCode.Return) || confirmPressed || attackOrder.Count == charactersalive)
             {
                 if (!turnInProgress)
                 {
@@ -144,7 +193,7 @@ public class GameManager : MonoBehaviour
                     turnInProgress = true;
                 }
             }
-            else if (Input.GetKeyDown(KeyCode.Space))
+            else if (Input.GetKeyDown(KeyCode.Space) || repeatPressed)
             {
                 foreach (PC c in lastAttackOrder)
                 {
@@ -153,6 +202,8 @@ public class GameManager : MonoBehaviour
                 attackOrder = lastAttackOrder;
             }
         }
+        confirmPressed = false;
+        repeatPressed = false;
     }
 
     IEnumerator InitiateAttack()

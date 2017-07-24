@@ -14,6 +14,10 @@ public class PC : MonoBehaviour
 
     private Text damageText;
     private Text defendText;
+    private Text attackText;
+
+    private Image attackPanel;
+
 
     public GameManager gameManager;
 
@@ -23,6 +27,10 @@ public class PC : MonoBehaviour
         var texts = GetComponentsInChildren<Text>();
         damageText = texts[0];
         defendText = texts[1];
+        attackText = texts[2];
+
+        attackPanel = GetComponentInChildren<Image>();
+
         ClearText();
         PopulateAttackSets();
     }
@@ -112,14 +120,36 @@ public class PC : MonoBehaviour
         enemy.AddHealth(-SelectedAttack().Damage);
     }
 
+    void OnMouseDown()
+    {
+        if (!gameManager.turnInProgress)
+        {
+            if (gameManager.attackOrder.Contains(this))
+            {
+                gameManager.attackOrder.Remove(this);
+            }
+            else
+            {
+                gameManager.attackOrder.Add(this);
+            }
+        }
+    }
+
     // Update is called once per frame
     void Update()
     {
         if (gameManager.attackOrder.Contains(this))
         {
             defendText.text = "";
+            attackPanel.enabled = false;
+            attackText.text = "";
         }
-        else defendText.text = "D";
+        else
+        {
+            defendText.text = "D";
+            attackPanel.enabled = true;
+            attackText.text = attackSet[gameManager.attackOrder.Count].Damage + " Damage";
+        }
 
         if (Input.GetKeyDown(keyCode))
         {
