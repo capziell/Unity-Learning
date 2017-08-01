@@ -10,6 +10,9 @@ public class Enemy : MonoBehaviour
     public int health = 8;
     public int attack = 3;
 
+    public Sprite healthySprite;
+    public Sprite damagedSprite;
+
     private Text damageText;
     private Text defendText;
     
@@ -18,6 +21,7 @@ public class Enemy : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+        GetComponent<SpriteRenderer>().sprite = healthySprite;
         damageText = GetComponentsInChildren<Text>()[0];
         defendText = GetComponentsInChildren<Text>()[1];
         ClearText();
@@ -85,6 +89,13 @@ public class Enemy : MonoBehaviour
         if (health <= 0)
         {
             StartCoroutine(Die());
+        }
+
+        var spriteRenderer = GetComponent<SpriteRenderer>();
+
+        if (health <= 25 && spriteRenderer.sprite == healthySprite)
+        {
+            spriteRenderer.sprite = damagedSprite;
         }
     }
 
